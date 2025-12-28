@@ -1,0 +1,19 @@
+# C++ build
+app
+*.exe
+*.o
+
+# Logs
+logs/
+trace_log.json
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store

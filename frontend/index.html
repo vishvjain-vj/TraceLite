@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trace Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+        th {
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>Function Trace Viewer</h2>
+
+<h3>Summary Stats</h3>
+<div id="stats"></div>
+<hr>
+
+<table id="traceTable">
+    <thead>
+        <tr>
+            <th>Function</th>
+            <th>Time (µs)</th>
+            <th>Thread ID</th>
+            <th>Call Stack</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<script>
+function loadTraces() {
+    fetch("http://127.0.0.1:5000/traces")
+        .then(response => response.json())
+        .then(data => {
+            const tbody = document.querySelector("#traceTable tbody");
+            tbody.innerHTML = ""; // clear table
+
+            data.forEach(trace => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${trace.function}</td>
+                    <td>${trace.time_us}</td>
+                    <td>${trace.thread_id}</td>
+                    <td>${trace.stack.join(" → ")}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        })
+        .catch(err => {
+            console.error("Failed to load traces", err);
+        });
+}
+
+function loadStats() {
+    fetch("http://127.0.0.1:5000/stats")
+        .then(res => res.json())
+        .then(stats => {
+            if (!stats.total_calls) return;
+
+            let html = `
+                <p><b>Total Calls:</b> ${stats.total_calls}</p>
+                <p><b>Slowest Function:</b>
+                    ${stats.slowest_function.name}
+                    (${stats.slowest_function.time_us} µs)
+                </p>
+                <h4>Per Function</h4>
+                <ul>
+            `;
+
+            for (const fn in stats.per_function) {
+                const f = stats.per_function[fn];
+                html += `
+                    <li>
+                        ${fn} → calls: ${f.count},
+                        avg: ${f.avg_us} µs
+                    </li>
+                `;
+            }
+
+            html += "</ul>";
+            document.getElementById("stats").innerHTML = html;
+        });
+}
+
+// Initial load
+loadTraces();
+loadStats();
+
+// 🔄 AUTO-REFRESH every 2 seconds
+setInterval(() => {
+    loadTraces();
+    loadStats();
+}, 2000);
+</script>
+
+</body>
+</html>
